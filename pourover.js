@@ -703,7 +703,7 @@ var PourOver = (function(){
                     current_item[k] = v;
                   });
                 } else {
-                    item = PourOver.Item(d); 
+                    item = PourOver.Item(d);
                     item.cid = last_id++;
                     this.items = this.items.concat([item]);
                 }
@@ -1313,26 +1313,20 @@ var PourOver = (function(){
             output = this.template({state:filter_state});
         return output
       },
-      // Pass in a MatchSet that only has a single query of a chain of OR'ed queried and receive
-      // an array of possibility names that have been selected.
+
       getSimpleSelectState: function(match_set,s,output){
-          if(typeof(match_set) === "undefined" || !match_set || !match_set.stack){return false}
-          if(typeof(s) === "undefined"){var s = match_set.stack}
-          if(typeof(output) === "undefined"){var output = []}
-          if(s.length < 1){
-            return output;
-          } else if (typeof(s[0][0]) === "object"){
-            output.push(s[0][1]);
-            return this.getSimpleSelectState(match_set,_(s).rest(),output);
-          } else if (s[0][0] === "or"){
-            output = output.concat(this.getSimpleSelectState(match_set,s[0][1]));
-            return this.getSimpleSelectState(match_set,_(s).rest(),output);
-          } else {
-            throw "This does not appear to be a valid, simple selectElement stack."
-          }
+        return getSelectState(match_set,'or',s,output);
       },
+
       getIntersectedSelectState: function(match_set,s,output){
-          if(typeof(match_set) === "undefined" || !match_set || !match_set.stack){return false}
+        return getSelectState(match_set,'and',s,output);
+      },
+
+      // Pass in a MatchSet that only has a single query or a chain of queries
+      // connected with `op` and receive an array of possibility names that have
+      // been selected.
+      getSelectState: function(match_set, op, s, output) {
+        if(typeof(match_set) === "undefined" || !match_set || !match_set.stack){return false}
           if(typeof(s) === "undefined"){var s = match_set.stack}
           if(typeof(output) === "undefined"){var output = []}
           if(s.length < 1){
@@ -1340,7 +1334,7 @@ var PourOver = (function(){
           } else if (typeof(s[0][0]) === "object"){
             output.push(s[0][1]);
             return this.getIntersectedSelectState(match_set,_(s).rest(),output);
-          } else if (s[0][0] === "and"){
+          } else if (s[0][0] === op){
             output = output.concat(this.getIntersectedSelectState(match_set,s[0][1]));
             return this.getIntersectedSelectState(match_set,_(s).rest(),output);
           } else {
@@ -1694,7 +1688,7 @@ var PourOver = (function(){
 
       // Filter for data with a continuous range or many possible values, such as dates, floats, etc.
       // Query with a scalar to query by exact value, or query with a length-2 array to
-      // query a range (as in dvrangeFilter) such that the value is greater than or equal 
+      // query a range (as in dvrangeFilter) such that the value is greater than or equal
       // to range[0] and less than range[1].
       PourOver.continuousRangeFilter = PourOver.Filter.extend({
         cacheResults: function(items){
@@ -1710,7 +1704,7 @@ var PourOver = (function(){
           var n = this.values.length;
 
           var bisect = PourOver.bisect_by( function(a) { return a.val });
-          
+
           if(_.isArray(query)){
             // range filter
             if(_.isUndefined(query[0]) || _.isUndefined(query[1])){
