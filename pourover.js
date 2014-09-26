@@ -1317,7 +1317,9 @@ var PourOver = (function(){
       // Pass in a MatchSet that only has a single query or a chain of queries
       // connected with 'and' or 'or' and receive an array of possibility names that have
       // been selected.
-      // @param op String 'and' or 'or'
+      //
+      // @param op String 'and' or 'or'. Omit this paramter to return names
+      // chained with either operator.
       getSelectState: function(match_set, op, s, output) {
         if(typeof(match_set) === "undefined" || !match_set || !match_set.stack){return false}
           if(typeof(s) === "undefined"){var s = match_set.stack}
