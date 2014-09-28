@@ -753,146 +753,163 @@ var PourOver = (function(){
             o[name].matching_cids = [];
           });
           return o;
-         },
+        },
 
-         // cacheResults and addCacheResults are generic methods that are must be overridden before instantiating a filter.
-         // The preset filters included below provide good examples of how these functions should be written. cacheResults
-         // should cache all the items in the collection, whereas addCacheResults incrementally adds new items to already
-         // cached, filtered results.
-         cacheResults: function(items){
-           throw "No cache function has been defined for this filter '" + this.name + "'.";
-         },
-         addCacheResults: function(items){
-           throw "No add cache function has been defined for this filter '" + this.name + "'.";
-         },
+        // cacheResults and addCacheResults are generic methods that are must be overridden before instantiating a filter.
+        // The preset filters included below provide good examples of how these functions should be written. cacheResults
+        // should cache all the items in the collection, whereas addCacheResults incrementally adds new items to already
+        // cached, filtered results.
+        cacheResults: function(items){
+          throw "No cache function has been defined for this filter '" + this.name + "'.";
+        },
+        addCacheResults: function(items){
+          throw "No add cache function has been defined for this filter '" + this.name + "'.";
+        },
 
-         makeQueryMatchSet: function(cids,query){
-            return new PourOver.MatchSet(cids, this.getCollection(), [[this,query]]);
-         },
+        makeQueryMatchSet: function(cids,query){
+           return new PourOver.MatchSet(cids, this.getCollection(), [[this,query]]);
+        },
 
-         // Generally only used when removing items from a collection or when an item changes value. This will remove the item from
-         // the cache so that it can either be recached with its new value or thrown away.
-         removeFromCache: function(items){
+        // Generally only used when removing items from a collection or when an item changes value. This will remove the item from
+        // the cache so that it can either be recached with its new value or thrown away.
+        removeFromCache: function(items){
           var cids = _(items).map(function(i){return i.cid;}).sort(function(a,b){return a-b;});
           _(this.possibilities).each(function(p){
             p.matching_cids = PourOver.subtract_sorted(p.matching_cids,cids);
           });
-         },
-
-         // The stateful way to query a filter. Delegates the retrieval of a MatchSet to the filter's getFn and caches the results on the filter.
-         query: function(q,silent){
-           if(typeof(silent) === "undefined"){var silent = false;}
-           var match_set = this.getFn(q);
-           this.setQuery(match_set,silent);
-         },
-
-         // Assigns a MatchSet to a filter (caches the result) and triggers the appropriate events.
-         setQuery: function(q,silent){
-           if(typeof(silent) === "undefined"){var silent = false;}
-           this.current_query = q;
-           if(!silent){
-             this.trigger("queryChange");
-           }
-         },
-
-         // Removes a cached result from a filter.
-         clearQuery: function(silent){
-           if(typeof(silent) === "undefined"){var silent = false;}
-           this.current_query = false;
-           if(!silent){
-             this.trigger("queryChange");
-           }
-         },
-
-         // Unions a cached result with another result (both being MatchSets) and produces a new MatchSet.
-         unionQuery: function(q,silent){
-           if(typeof(silent) === "undefined"){var silent = false;}
-           if(typeof(q) === "string" || typeof(q) === "number" || _.isArray(q)){
-             var q = this.getFn(q);
-           }
-           if(this.current_query){
-             this.current_query = this.current_query.or(q);
-           } else {
-             this.current_query = q;
-           }
-           if(!silent){
-             this.trigger("queryChange");
-           }
-         },
-
-         // Intersects a cached result with another result (both being MatchSets) and produces a new MatchSet.
-         intersectQuery: function(q,silent){
-           if(typeof(silent) === "undefined"){var silent = false;}
-           if(typeof(q) === "string" || typeof(q) === "number" || _.isArray(q)){
-             var q = this.getFn(q);
-           }
-           if(this.current_query){
-             this.current_query = this.current_query.and(q);
-           } else {
-             this.current_query = q;
-           }
-           if(!silent){
-             this.trigger("queryChange");
-           }
-         },
-
-         // Subtracts a cached result with another result (both being MatchSets) and produces a new MatchSet.
-         subtractQuery: function(q,silent){
-           if(typeof(silent) === "undefined"){var silent = false;}
-           if(typeof(q) === "string" || typeof(q) === "number" || _.isArray(q)){
-             var q = this.getFn(q);
-           }
-           if(this.current_query){
-             this.current_query = this.current_query.not(q);
-           } else {
-             this.current_query = q;
-           }
-           if(!silent){
-             this.trigger("queryChange");
-           }
-         },
-
-         // This is the inverse of the three functions above. Removes a query from a compound, cached MatchSet on a filter.
-         // This is useful when you have a UI in which subsequent selections union together. It is faster on a toggle to remove
-         // the deselected possibility rather than re-union the remaining selected ones.
-         // TODO: Test
-         removeSingleQuery: function(q,silent){
-           if(! this.current_query){return false;}
-           if(typeof(silent) === "undefined"){var silent = false;}
-           if(typeof(q) === "string" || typeof(q) === "number" || _.isArray(q)){
-             var q = this.getFn(q);
-           }
-           var s = [],
-               stack = this.current_query.stack,new_stack,
-               is_compound = function(c){return _.isString(c) && c.match(/^(or|and|not)$/);};
-            new_stack = _(stack).reduce(function(m,i){
-              if(i[1] === q.stack[0][1]){
-                return m;
-              } else if(is_compound(i[0]) && i[1][0][1] === q.stack[0][1]){
-                return m;
-              } else {m.push(i); return m;}
-            },s);
-           if(new_stack[0] && (new_stack[0][0] == "and" || new_stack[0][0] == "or" || new_stack[0][0] == "not")){
-             new_stack[0] = new_stack [0][1][0];
-           }
-           this.current_query.stack = new_stack;
-           this.current_query.refresh();
-           if(!silent){
-             this.trigger("queryChange");
-           }
-         },
-
-         // Convenice method for getting the collection attached to a filter.
-         // Just an aesthetic thing. I like the explicit "getCollection" calls in
-         // the rest of the code.
-         getCollection: function(){
-           return this.collection;
           },
 
-         getByPossibilityGroups: function(){
-           var collection = this.collection;
-           return _(this.possibilities).reduce(function(m,p,k){m[k] = collection.get(p.matching_cids); return m;},{});
-         }
+          // The stateful way to query a filter. Delegates the retrieval of a MatchSet to the filter's getFn and caches the results on the filter.
+          query: function(q,silent){
+            if(typeof(silent) === "undefined"){var silent = false;}
+            var match_set = this.getFn(q);
+            this.setQuery(match_set,silent);
+        },
+
+        // Assigns a MatchSet to a filter (caches the result) and triggers the appropriate events.
+        setQuery: function(q,silent){
+          if(typeof(silent) === "undefined"){var silent = false;}
+          this.current_query = q;
+          if(!silent){
+            this.trigger("queryChange");
+          }
+        },
+
+        // Removes a cached result from a filter.
+        clearQuery: function(silent){
+          if(typeof(silent) === "undefined"){var silent = false;}
+          this.current_query = false;
+          if(!silent){
+            this.trigger("queryChange");
+          }
+        },
+
+        // Unions a cached result with another result (both being MatchSets) and produces a new MatchSet.
+        unionQuery: function(q,silent){
+          if(typeof(silent) === "undefined"){var silent = false;}
+          if(typeof(q) === "string" || typeof(q) === "number" || _.isArray(q)){
+            var q = this.getFn(q);
+          }
+          if(this.current_query){
+            this.current_query = this.current_query.or(q);
+          } else {
+            this.current_query = q;
+          }
+          if(!silent){
+            this.trigger("queryChange");
+          }
+        },
+        // Intersects a cached result with another result (both being MatchSets) and produces a new MatchSet.
+        intersectQuery: function(q,silent){
+          if(typeof(silent) === "undefined"){var silent = false;}
+          if(typeof(q) === "string" || typeof(q) === "number" || _.isArray(q)){
+            var q = this.getFn(q);
+          }
+          if(this.current_query){
+            this.current_query = this.current_query.and(q);
+          } else {
+            this.current_query = q;
+          }
+          if(!silent){
+            this.trigger("queryChange");
+          }
+        },
+
+        // Subtracts a cached result with another result (both being MatchSets) and produces a new MatchSet.
+        subtractQuery: function(q,silent){
+          if(typeof(silent) === "undefined"){var silent = false;}
+          if(typeof(q) === "string" || typeof(q) === "number" || _.isArray(q)){
+            var q = this.getFn(q);
+          }
+          if(this.current_query){
+            this.current_query = this.current_query.not(q);
+          } else {
+            this.current_query = q;
+          }
+          if(!silent){
+            this.trigger("queryChange");
+          }
+        },
+
+        // This is the inverse of the three functions above. Removes a query from a compound, cached MatchSet on a filter.
+        // This is useful when you have a UI in which subsequent selections union together. It is faster on a toggle to remove
+        // the deselected possibility rather than re-union the remaining selected ones.
+        // TODO: Test
+        removeSingleQuery: function(q,silent){
+          if(! this.current_query){return false;}
+          if(typeof(silent) === "undefined"){var silent = false;}
+          if(typeof(q) === "string" || typeof(q) === "number" || _.isArray(q)){
+            var q = this.getFn(q);
+          }
+          var s = [],
+              stack = this.current_query.stack,new_stack,
+              is_compound = function(c){return _.isString(c) && c.match(/^(or|and|not)$/);};
+           new_stack = _(stack).reduce(function(m,i){
+             if(i[1] === q.stack[0][1]){
+               return m;
+             } else if(is_compound(i[0]) && i[1][0][1] === q.stack[0][1]){
+               return m;
+             } else {m.push(i); return m;}
+           },s);
+          if(new_stack[0] && (new_stack[0][0] == "and" || new_stack[0][0] == "or" || new_stack[0][0] == "not")){
+            new_stack[0] = new_stack [0][1][0];
+          }
+          this.current_query.stack = new_stack;
+          this.current_query.refresh();
+          if(!silent){
+            this.trigger("queryChange");
+          }
+        },
+
+        /**
+         * Check whether this filter has any value that intersects with the given
+         * match set, or pass a specific query to check if it intersects.
+         * @param  {MatchSet}  match_set Match set to compare this filter to.
+         * @param  {String}  query     A value for this filter.
+         * @return {Boolean}           [description]
+         */
+        hasPossibilites: function(match_set, query) {
+          if (!query) {
+            _(this.getValues()).each(function(v) {
+              if (this.getFn(v).and(match_set).cids.length) { return true; }
+            });
+            return false;
+          } else {
+            return Boolean(this.getFn(query).and(match_set).cids.length);
+          }
+        },
+
+        // Convenice method for getting the collection attached to a filter.
+        // Just an aesthetic thing. I like the explicit "getCollection" calls in
+        // the rest of the code.
+        getCollection: function(){
+          return this.collection;
+        },
+
+        getByPossibilityGroups: function(){
+          var collection = this.collection;
+          return _(this.possibilities).reduce(function(m,p,k){m[k] = collection.get(p.matching_cids); return m;},{});
+        }
       });
 
       // #Sorts
