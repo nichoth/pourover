@@ -889,7 +889,7 @@ var PourOver = (function(){
          */
         hasPossibilites: function(match_set, query) {
           if (!query) {
-            _(this.getValues()).each(function(v) {
+            _(this.values).each(function(v) {
               if (this.getFn(v).and(match_set).cids.length) { return true; }
             });
             return false;
