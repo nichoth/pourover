@@ -1314,26 +1314,15 @@ var PourOver = (function(){
             output = this.template({state:filter_state});
         return output
       },
-      // Pass in a MatchSet that only has a single query of a chain of OR'ed queried and receive
-      // an array of possibility names that have been selected.
-      getSimpleSelectState: function(match_set,s,output){
-          if(typeof(match_set) === "undefined" || !match_set || !match_set.stack){return false}
-          if(typeof(s) === "undefined"){var s = match_set.stack}
-          if(typeof(output) === "undefined"){var output = []}
-          if(s.length < 1){
-            return output;
-          } else if (typeof(s[0][0]) === "object"){
-            output.push(s[0][1]);
-            return this.getSimpleSelectState(match_set,_(s).rest(),output);
-          } else if (s[0][0] === "or"){
-            output = output.concat(this.getSimpleSelectState(match_set,s[0][1]));
-            return this.getSimpleSelectState(match_set,_(s).rest(),output);
-          } else {
-            throw "This does not appear to be a valid, simple selectElement stack."
-          }
-      },
-      getIntersectedSelectState: function(match_set,s,output){
-          if(typeof(match_set) === "undefined" || !match_set || !match_set.stack){return false}
+
+      // Pass in a MatchSet that only has a single query or a chain of queries
+      // connected with 'and' or 'or' and receive an array of possibility names that have
+      // been selected.
+      //
+      // @param op String 'and' or 'or'. Omit this paramter to return names
+      // chained with either operator.
+      getSelectState: function(match_set, op, s, output) {
+        if(typeof(match_set) === "undefined" || !match_set || !match_set.stack){return false}
           if(typeof(s) === "undefined"){var s = match_set.stack}
           if(typeof(output) === "undefined"){var output = []}
           if(s.length < 1){
@@ -1341,12 +1330,25 @@ var PourOver = (function(){
           } else if (typeof(s[0][0]) === "object"){
             output.push(s[0][1]);
             return this.getIntersectedSelectState(match_set,_(s).rest(),output);
-          } else if (s[0][0] === "and"){
+          } else if (op) {
+            if (s[0][0] === op)
+              output = output.concat(this.getIntersectedSelectState(match_set,s[0][1]));
+              return this.getIntersectedSelectState(match_set,_(s).rest(),output);
+          // no op passed in, match either 'and' / 'or'
+          } else if (s[0][0] === 'and' || s[0][0] === 'or'){
             output = output.concat(this.getIntersectedSelectState(match_set,s[0][1]));
             return this.getIntersectedSelectState(match_set,_(s).rest(),output);
           } else {
             throw "This does not appear to be a valid, simple selectElement stack."
           }
+      },
+
+      getSimpleSelectState: function(match_set,s,output){
+        return this.getSelectState(match_set,'or',s,output);
+      },
+
+      getIntersectedSelectState: function(match_set,s,output){
+        return this.getSelectState(match_set,'and',s,output);
       },
 
       // Pass in a MatchSet that is the result of a single, non-compounded range and receive the
